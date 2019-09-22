@@ -129,11 +129,11 @@ namespace CachedWebApi01.Cache
 
             var keyBuilder = new StringBuilder();
 
-            keyBuilder.Append($"{request.Path}");
+            keyBuilder.Append($"{request.Path.ToString().ToLower()}");
 
             foreach (var (key, value) in request.Query.OrderBy(x => x.Key))
             {
-                keyBuilder.Append($"|{key}-{value}");
+                keyBuilder.Append($"|{key.ToLower()}-{value.ToString().ToLower()}");
             }
 
             return keyBuilder.ToString();
