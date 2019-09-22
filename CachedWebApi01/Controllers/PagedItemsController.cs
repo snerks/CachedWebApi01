@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CachedWebApi01.Cache;
 using Microsoft.AspNetCore.Http;
@@ -13,10 +14,14 @@ namespace CachedWebApi01.Controllers
     public class PagedItemsController : ControllerBase
     {
         // GET api/values/5
-        [Cached(10)]
+        [Cached(10 * CachedAttribute.OneSecond)]
+        //[Cached(CachedAttribute.OneDay)]
         [HttpGet("{id}")]
         public async Task<ActionResult<PagedItemsResponse<WidgetResponseItem>>> Get(int id)
         {
+            // Emulate expensive work
+            Thread.Sleep(2000);
+
             var result = new PagedItemsResponse<WidgetResponseItem>
             {
                 PageNumber = 1,

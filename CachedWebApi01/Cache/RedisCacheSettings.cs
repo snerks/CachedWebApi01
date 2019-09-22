@@ -7,7 +7,7 @@ namespace CachedWebApi01.Cache
 {
     public class RedisCacheSettings
     {
-        public bool Enabled { get; set; }
+        public bool IsEnabled { get; set; }
 
         public string ConnectionString { get; set; }
     }

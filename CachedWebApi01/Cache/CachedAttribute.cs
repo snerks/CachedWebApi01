@@ -13,6 +13,11 @@ namespace CachedWebApi01.Cache
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class CachedAttribute : Attribute, IAsyncActionFilter
     {
+        public const int OneSecond = 1;
+        public const int OneMinute = 60 * OneSecond;
+        public const int OneHour = 60 * OneMinute;
+        public const int OneDay = 24 * OneHour;
+
         private readonly int _timeToLiveSeconds;
 
         public CachedAttribute(int timeToLiveSeconds)
@@ -22,51 +27,106 @@ namespace CachedWebApi01.Cache
 
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            var cacheSettings = context.HttpContext.RequestServices.GetRequiredService<RedisCacheSettings>();
+            var isResponseCacheEnabled = false;
 
-            if (!cacheSettings.Enabled)
+            try
+            {
+                var responseCacheSettings = 
+                    context
+                    .HttpContext
+                    .RequestServices
+                    .GetRequiredService<RedisCacheSettings>();
+
+                isResponseCacheEnabled = responseCacheSettings.IsEnabled;
+            }
+            catch (Exception ex)
+            {
+                // Log
+                //throw;
+            }
+
+            if (!isResponseCacheEnabled)
             {
                 await next();
                 return;
             }
 
-            var cacheService = context.HttpContext.RequestServices.GetRequiredService<IResponseCacheService>();
+            IResponseCacheService responseCacheService = null;
 
-            var cacheKey = GenerateCacheKeyFromRequest(context.HttpContext.Request);
-            var cachedResponse = await cacheService.GetCachedResponseAsync(cacheKey);
-
-            if (!string.IsNullOrEmpty(cachedResponse))
+            try
             {
-                var contentResult = new ContentResult
+                responseCacheService = 
+                    context
+                    .HttpContext
+                    .RequestServices
+                    .GetRequiredService<IResponseCacheService>();
+            }
+            catch (Exception ex)
+            {
+                // Log
+                //throw;
+            }
+
+            var responseCacheKey = GenerateCacheKeyFromRequest(context.HttpContext.Request);
+
+            var willUseCache = 
+                responseCacheService != null && 
+                responseCacheKey != null;
+
+            try
+            {
+                if (willUseCache)
                 {
-                    Content = cachedResponse,
-                    ContentType = "application/json",
-                    StatusCode = 200
-                };
-                context.Result = contentResult;
-                return;
+                    var cachedResponse = 
+                        await 
+                        responseCacheService
+                        .GetCachedResponseAsync(responseCacheKey);
+
+                    if (!string.IsNullOrEmpty(cachedResponse))
+                    {
+                        var contentResult = new ContentResult
+                        {
+                            Content = cachedResponse,
+                            ContentType = "application/json",
+                            StatusCode = 200
+                        };
+
+                        context.Result = contentResult;
+
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log
+                //throw;
             }
 
             var executedContext = await next();
 
-            //if (executedContext.Result is OkObjectResult okObjectResult)
-            //{
-            //    await cacheService.CacheResponseAsync(cacheKey, okObjectResult.Value, TimeSpan.FromSeconds(_timeToLiveSeconds));
-            //}
-
-            if (executedContext.Result is ObjectResult okObjectResult)
+            if (willUseCache)
             {
-                await 
-                    cacheService
-                    .CacheResponseAsync(
-                        cacheKey, 
-                        okObjectResult.Value, 
-                        TimeSpan.FromSeconds(_timeToLiveSeconds));
+                //if (executedContext.Result is OkObjectResult okObjectResult)
+                if (executedContext.Result is ObjectResult okObjectResult)
+                {
+                    await 
+                        responseCacheService
+                        .CacheResponseAsync(
+                            responseCacheKey, 
+                            okObjectResult.Value, 
+                            TimeSpan.FromSeconds(_timeToLiveSeconds));
+                }
             }
         }
 
-        private static string GenerateCacheKeyFromRequest(HttpRequest request)
+        private string GenerateCacheKeyFromRequest(HttpRequest request)
         {
+            if (request == null)
+            {
+                return null;
+            }
+
             var keyBuilder = new StringBuilder();
 
             keyBuilder.Append($"{request.Path}");
