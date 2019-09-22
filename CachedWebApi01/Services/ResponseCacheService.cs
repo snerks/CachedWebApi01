@@ -7,7 +7,7 @@ namespace CachedWebApi01.Services
 {
     public interface IResponseCacheService
     {
-        Task CacheResponseAsync(string cacheKey, object response, TimeSpan timeTimeLive);
+        Task CacheResponseAsync(string cacheKey, object response, TimeSpan timeToLive);
 
         Task<string> GetCachedResponseAsync(string cacheKey);
     }
@@ -23,7 +23,7 @@ namespace CachedWebApi01.Services
 
         public IDistributedCache DistributedCache { get; }
 
-        public async Task CacheResponseAsync(string cacheKey, object response, TimeSpan timeTimeLive)
+        public async Task CacheResponseAsync(string cacheKey, object response, TimeSpan timeToLive)
         {
             if (cacheKey == null)
             {
@@ -42,7 +42,7 @@ namespace CachedWebApi01.Services
                 serializedResponse, 
                 new DistributedCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = timeTimeLive
+                    AbsoluteExpirationRelativeToNow = timeToLive
                 });
         }
 
