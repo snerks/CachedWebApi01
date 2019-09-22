@@ -15,7 +15,7 @@
 
         //"launchUrl": "api/values",
 
-        "launchUrl": "api/PagedItems/1",
+        "launchUrl": "api/DistributedCaches/1",
 
         "environmentVariables": {
             "ASPNETCORE_ENVIRONMENT": "Development"

@@ -8,10 +8,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace CachedWebApi01
 {
@@ -29,7 +31,23 @@ namespace CachedWebApi01
         {
             AddRedisConfiguration(services);
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services
+                .AddMvc()
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_2)
+                .AddJsonOptions(options =>
+                {
+                    options.SerializerSettings.Formatting = Formatting.Indented;
+                });
+
+            //services.AddTransient<IWidgetService, WidgetService>();
+
+            // WidgetService
+            services.AddScoped<WidgetService>();
+
+            services.AddScoped<IWidgetService>(provider =>
+                new CachedWidgetService(
+                    provider.GetRequiredService<IDistributedCache>(),
+                    provider.GetRequiredService<WidgetService>()));
         }
 
         public void AddRedisConfiguration(IServiceCollection services)
@@ -46,8 +64,13 @@ namespace CachedWebApi01
                     return;
                 }
 
-                services.AddStackExchangeRedisCache(options => options.Configuration = redisCacheSettings.ConnectionString);
+                services.AddStackExchangeRedisCache(options => 
+                    options.Configuration = redisCacheSettings.ConnectionString);
+
                 services.AddSingleton<IResponseCacheService, ResponseCacheService>();
+
+                // Experiment with MemoryDistributedCache
+                //services.AddSingleton<IDistributedCache, MemoryDistributedCache>();
             }
             catch (Exception ex)
             {

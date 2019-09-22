@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace CachedWebApi01.Cache
 {
@@ -94,7 +96,7 @@ namespace CachedWebApi01.Cache
                     {
                         var contentResult = new ContentResult
                         {
-                            Content = cachedResponse,
+                            Content = JToken.Parse(cachedResponse).ToString(Formatting.Indented),
                             ContentType = "application/json",
                             StatusCode = 200
                         };

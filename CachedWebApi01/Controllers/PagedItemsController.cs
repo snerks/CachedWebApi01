@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CachedWebApi01.Cache;
-using Microsoft.AspNetCore.Http;
+using CachedWebApi01.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CachedWebApi01.Controllers
@@ -13,25 +13,40 @@ namespace CachedWebApi01.Controllers
     [ApiController]
     public class PagedItemsController : ControllerBase
     {
+        public PagedItemsController(IWidgetService widgetService)
+        {
+            WidgetService = widgetService ?? throw new ArgumentNullException(nameof(widgetService));
+        }
+
+        public IWidgetService WidgetService { get; }
+
         // GET api/values/5
-        [Cached(-10 * CachedAttribute.OneSecond)]
+        [Cached(10 * CachedAttribute.OneSecond)]
         //[Cached(CachedAttribute.OneDay)]
         [HttpGet("{id}")]
         public async Task<ActionResult<PagedItemsResponse<WidgetResponseItem>>> Get(int id)
         {
             // Emulate expensive work
-            Thread.Sleep(2000);
+            var startDateTime = DateTime.Now;
+
+            var sleepMilliseconds = 2000;
+            Thread.Sleep(sleepMilliseconds);
+
+            var items = await WidgetService.Get(id);
+            var endDateTime = DateTime.Now;
 
             var result = new PagedItemsResponse<WidgetResponseItem>
             {
                 PageNumber = 1,
-                PageSize = 10
+                PageSize = sleepMilliseconds,
+
+                StartDateTime = startDateTime,
+                EndDateTime = endDateTime
             };
 
-            result.Items.Add(new WidgetResponseItem { Id = id, Name = DateTime.Now.ToString() });
+            result.Items.AddRange(items);
 
-            return 
-                result;
+            return result;
         }
     }
 
@@ -39,14 +54,9 @@ namespace CachedWebApi01.Controllers
     {
         public int PageSize { get; set; }
         public int PageNumber { get; set; }
-
         public List<T> Items { get; set; } = new List<T>();
-    }
 
-    public class WidgetResponseItem
-    {
-        public int Id { get; set; }
-
-        public string Name { get; set; }
+        public DateTime StartDateTime { get; set; }
+        public DateTime EndDateTime { get; set; }
     }
 }
