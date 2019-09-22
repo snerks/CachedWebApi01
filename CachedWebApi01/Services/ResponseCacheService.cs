@@ -14,8 +14,6 @@ namespace CachedWebApi01.Services
 
     public class ResponseCacheService : IResponseCacheService
     {
-        //private readonly IDistributedCache _distributedCache;
-
         public ResponseCacheService(IDistributedCache distributedCache)
         {
             DistributedCache = distributedCache ?? throw new ArgumentNullException(nameof(distributedCache));
