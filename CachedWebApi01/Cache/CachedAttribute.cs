@@ -22,6 +22,14 @@ namespace CachedWebApi01.Cache
 
         public CachedAttribute(int timeToLiveSeconds)
         {
+            if (timeToLiveSeconds <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(timeToLiveSeconds), 
+                    timeToLiveSeconds, 
+                    "Value cannot be less than or equal to zero");
+            }
+
             _timeToLiveSeconds = timeToLiveSeconds;
         }
 

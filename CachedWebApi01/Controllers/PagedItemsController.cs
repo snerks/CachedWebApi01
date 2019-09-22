@@ -14,7 +14,7 @@ namespace CachedWebApi01.Controllers
     public class PagedItemsController : ControllerBase
     {
         // GET api/values/5
-        [Cached(10 * CachedAttribute.OneSecond)]
+        [Cached(-10 * CachedAttribute.OneSecond)]
         //[Cached(CachedAttribute.OneDay)]
         [HttpGet("{id}")]
         public async Task<ActionResult<PagedItemsResponse<WidgetResponseItem>>> Get(int id)
